@@ -1,579 +1,92 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>SYSTEM://BREACH-0x7F3A</title>
-<style>
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-@font-face{font-family:'Mono';src:local('Courier New'),local('Consolas'),local(monospace)}
-:root{--cyan:#00ffcc;--green:#00ff41;--red:#ff0040;--dim:#0a3d0a;--bg:#000;--font:'Mono',monospace}
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--green);font-family:var(--font);cursor:default}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bad Apple!! - Shadow Art</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-/* ===== CRT / SCANLINE OVERLAY ===== */
-#crt-overlay{position:fixed;inset:0;z-index:9999;pointer-events:none;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,.15) 0px,rgba(0,0,0,.15) 1px,transparent 1px,transparent 3px);
-  mix-blend-mode:multiply}
-#flicker{position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:0;animation:flicker 8s infinite}
-@keyframes flicker{0%,95%,100%{opacity:0}96%{opacity:.04}97%{opacity:0}98%{opacity:.06}99%{opacity:0}}
+        #enter-btn {
+            background: transparent;
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 24px;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+            position: absolute;
+        }
 
-/* ===== MATRIX RAIN CANVAS ===== */
-#matrix{position:fixed;inset:0;z-index:0;opacity:.12}
+        #enter-btn:hover {
+            background: #fff;
+            color: #000;
+        }
 
-/* ===== SCREEN 1: LANDING ===== */
-#screen1{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s,transform .6s}
-#screen1.hidden{opacity:0;transform:scale(.95);pointer-events:none}
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            z-index: 10;
+            overflow: hidden;
+        }
 
-.top-glitch{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--red);letter-spacing:4px;animation:txtFlicker 3s infinite;white-space:nowrap}
-@keyframes txtFlicker{0%,89%,100%{opacity:.7}90%{opacity:1}92%{opacity:.3}94%{opacity:.9}}
-
-.hex-scroll{position:absolute;width:100%;overflow:hidden;top:60px;height:20px;font-size:9px;color:var(--dim);letter-spacing:2px;white-space:nowrap;animation:scrollLeft 40s linear infinite}
-@keyframes scrollLeft{0%{transform:translateX(100vw)}100%{transform:translateX(-200%)}}
-
-.center-block{text-align:center;z-index:2;position:relative}
-.title-glitch{font-size:clamp(28px,5vw,56px);font-weight:700;color:var(--cyan);text-shadow:0 0 20px var(--cyan),0 0 60px rgba(0,255,204,.3);position:relative;animation:glitchText 5s infinite}
-.title-glitch::before,.title-glitch::after{content:attr(data-text);position:absolute;left:0;top:0;width:100%;overflow:hidden}
-.title-glitch::before{color:var(--red);animation:glitchBefore 5s infinite;clip-path:inset(0 0 60% 0)}
-.title-glitch::after{color:#00f;animation:glitchAfter 5s infinite;clip-path:inset(60% 0 0 0)}
-@keyframes glitchBefore{0%,90%,100%{transform:translate(0)}92%{transform:translate(-4px,2px)}94%{transform:translate(3px,-1px)}96%{transform:translate(-2px,1px)}}
-@keyframes glitchAfter{0%,88%,100%{transform:translate(0)}90%{transform:translate(3px,-2px)}93%{transform:translate(-4px,1px)}95%{transform:translate(2px,3px)}}
-@keyframes glitchText{0%,87%,100%{text-shadow:0 0 20px var(--cyan)}89%{text-shadow:-3px 0 var(--red),3px 0 #00f,0 0 20px var(--cyan)}91%{text-shadow:2px 0 var(--red),-2px 0 #00f}}
-
-.sub-text{font-size:clamp(10px,1.5vw,14px);color:var(--dim);margin-top:16px;letter-spacing:6px;animation:txtFlicker 4s infinite}
-
-.terminal-line{font-size:11px;color:var(--green);margin-top:30px;opacity:.5;letter-spacing:1px}
-.blink-cursor::after{content:'_';animation:blink .8s step-end infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-
-/* ENTER BUTTON */
-.enter-btn{margin-top:50px;padding:16px 48px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font);font-size:clamp(14px,2vw,18px);letter-spacing:6px;cursor:pointer;position:relative;overflow:hidden;transition:all .3s;text-transform:uppercase}
-.enter-btn::before{content:'';position:absolute;inset:0;background:var(--cyan);opacity:0;transition:opacity .3s}
-.enter-btn:hover{box-shadow:0 0 30px rgba(0,255,204,.4),inset 0 0 30px rgba(0,255,204,.1);text-shadow:0 0 10px var(--cyan)}
-.enter-btn:hover::before{opacity:.08}
-.enter-btn:active{transform:scale(.97)}
-
-.bottom-warning{position:absolute;bottom:30px;font-size:9px;color:var(--red);letter-spacing:3px;animation:txtFlicker 6s infinite}
-
-/* Random floating hex strings */
-.floating-hex{position:absolute;font-size:8px;color:var(--dim);opacity:.3;pointer-events:none;white-space:nowrap}
-
-/* ===== SCREEN 2: BILIBILI-STYLE PLAYER ===== */
-#screen2{position:fixed;inset:0;z-index:10;opacity:0;pointer-events:none;transition:opacity .8s;overflow-y:auto;background:#000}
-#screen2.active{opacity:1;pointer-events:auto}
-#screen2::-webkit-scrollbar{width:4px}
-#screen2::-webkit-scrollbar-thumb{background:var(--dim)}
-
-/* TOP BAR */
-.top-bar{display:flex;align-items:center;gap:24px;padding:12px 40px;border-bottom:1px solid rgba(0,255,204,.08);position:sticky;top:0;background:rgba(0,0,0,.92);z-index:50;backdrop-filter:blur(4px)}
-.top-logo{font-size:20px;font-weight:700;color:var(--cyan);letter-spacing:1px;text-shadow:0 0 12px var(--cyan);white-space:nowrap}
-.top-logo span{color:var(--red)}
-.top-nav{font-size:13px;color:var(--dim);cursor:pointer;letter-spacing:1px;transition:color .2s;white-space:nowrap}
-.top-nav:hover{color:var(--cyan)}
-.top-right{margin-left:auto;display:flex;align-items:center;gap:16px;color:var(--dim);font-size:12px}
-.top-user{width:26px;height:26px;border:1px solid var(--dim);display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer}
-
-/* PLAYER MAIN LAYOUT */
-.player-main{max-width:1280px;margin:0 auto;padding:20px 40px;display:flex;gap:24px}
-
-/* LEFT */
-.player-left{flex:1;min-width:0}
-
-/* VIDEO WRAPPER */
-.video-wrapper{position:relative;width:100%;aspect-ratio:16/9;background:#0a0a0a;border:1px solid var(--dim);box-shadow:0 0 40px rgba(0,255,204,.08)}
-.video-wrapper::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0px,rgba(0,0,0,.12) 1px,transparent 1px,transparent 3px)}
-.video-wrapper::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;
-  background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.6) 100%);
-  mix-blend-mode:multiply}
-
-/* DANMAKU */
-#danmaku-layer{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none}
-.danmaku{position:absolute;white-space:nowrap;font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;letter-spacing:0;animation:danmakuMove linear forwards;top:0}
-@keyframes danmakuMove{from{transform:translateX(100%)}to{transform:translateX(-110%)}}
-.danmaku.top{animation:none;left:50%;transform:translateX(-50%);top:0}
-.danmaku.bottom{animation:none;left:50%;transform:translateX(-50%);bottom:0;top:auto}
-
-/* TITLE */
-.video-title{font-size:16px;color:var(--cyan);margin:14px 0 6px;font-weight:600;text-shadow:0 0 6px rgba(0,255,204,.2)}
-.video-stats{font-size:12px;color:var(--dim);margin-bottom:14px;display:flex;gap:18px}
-.video-stats .stat b{color:var(--green)}
-
-/* UP ROW */
-.up-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid rgba(0,255,204,.06);border-bottom:1px solid rgba(0,255,204,.06)}
-.up-avatar{width:48px;height:48px;border-radius:50%;background:repeating-conic-gradient(from 0deg,var(--cyan) 0deg 20deg,var(--green) 20deg 40deg);display:flex;align-items:center;justify-content:center;font-size:20px;color:#000}
-.up-info{flex:1;min-width:0}
-.up-name{font-size:14px;color:var(--green);font-weight:600}
-.up-verified{color:var(--cyan);margin-left:4px}
-.up-desc{font-size:11px;color:var(--dim);margin-top:2px}
-.up-action{display:flex;gap:8px}
-.ike-btn,.add-btn{font-family:var(--font);font-size:12px;padding:5px 14px;background:transparent;border:1px solid var(--dim);color:var(--dim);cursor:pointer;transition:all .2s}
-.ike-btn:hover{border-color:var(--cyan);color:var(--cyan)}
-.add-btn{border-color:var(--cyan);color:var(--cyan)}
-.add-btn:hover{background:var(--cyan);color:#000}
-
-/* TABS */
-.tabs{display:flex;margin:16px 0;color:var(--dim);font-size:14px}
-.tab{padding:6px 4px;margin-right:28px;cursor:pointer;border-bottom:2px solid transparent}
-.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
-.tab span{font-size:11px;margin-left:2px}
-
-/* COMMENT INPUT */
-.comment-input{display:flex;align-items:center;gap:12px;margin-bottom:20px}
-.ci-av{width:40px;height:40px;border-radius:50%;border:1px solid var(--dim);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--dim)}
-.comment-input input{flex:1;background:#0a0a0a;border:1px solid var(--dim);color:var(--green);font-family:var(--font);padding:10px 14px;font-size:12px}
-.comment-input input::placeholder{color:var(--dim)}
-
-/* COMMENT LIST */
-.comment-list{display:flex;flex-direction:column}
-.comment-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,255,204,.05)}
-.comment-av{width:36px;height:36px;border-radius:50%;background:#0a3d0a;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.comment-body{flex:1;min-width:0}
-.comment-user{font-size:12px;color:var(--cyan);margin-bottom:3px}
-.comment-text{font-size:13px;color:var(--green);line-height:1.6;word-break:break-word}
-.comment-time{font-size:10px;color:var(--dim);margin-top:4px}
-
-/* RIGHT SIDEBAR */
-.player-right{width:300px;flex-shrink:0}
-.right-title{font-size:14px;color:var(--cyan);margin-bottom:14px;border-left:3px solid var(--cyan);padding-left:10px}
-.rec-item{display:flex;gap:10px;margin-bottom:16px;cursor:pointer}
-.rec-thumb{width:120px;aspect-ratio:16/9;background:#0a3d0a;position:relative;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
-.rec-thumb .rec-dur{position:absolute;right:2px;bottom:2px;font-size:9px;color:#fff;background:rgba(0,0,0,.7);padding:0 3px}
-.rec-body{min-width:0}
-.rec-title{font-size:12px;color:var(--green);line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.rec-meta{font-size:10px;color:var(--dim)}
-
-/* ORIENTATION WARNING */
-#orient-warning{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
-#orient-warning.hidden{opacity:0;pointer-events:none}
-.rotate-icon{width:60px;height:60px;border:2px solid var(--cyan);border-radius:8px;position:relative;animation:rotateDevice 2s ease-in-out infinite}
-.rotate-icon::after{content:'';position:absolute;top:50%;left:50%;width:10px;height:10px;background:var(--cyan);border-radius:50%;transform:translate(-50%,-50%)}
-@keyframes rotateDevice{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
-#orient-warning .warn-text{margin-top:20px;font-size:14px;color:var(--cyan);letter-spacing:4px}
-#orient-warning .warn-sub{margin-top:8px;font-size:10px;color:var(--dim);letter-spacing:2px}
-
-/* LOADING SPINNER */
-#loader{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;background:#0a0a0a}
-#loader.done{opacity:0;pointer-events:none;transition:opacity .8s}
-
-.spinner{width:80px;height:80px;position:relative}
-.spinner-ring{position:absolute;inset:0;border:2px solid transparent;border-radius:50%}
-.spinner-ring:nth-child(1){border-top-color:var(--cyan);animation:spin 1.2s linear infinite}
-.spinner-ring:nth-child(2){inset:8px;border-right-color:var(--green);animation:spin 1.8s linear infinite reverse}
-.spinner-ring:nth-child(3){inset:16px;border-bottom-color:var(--cyan);animation:spin 2.4s linear infinite}
-@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-
-.spinner-hex{font-size:9px;color:var(--dim);margin-top:20px;letter-spacing:2px;animation:txtFlicker 2s infinite}
-.spinner-pct{font-size:11px;color:var(--cyan);margin-top:8px;letter-spacing:4px}
-
-/* VIDEO */
-#main-video{width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;background:#000;filter:contrast(1.6) saturate(.3) brightness(.85) blur(0.4px);image-rendering:pixelated}
-#main-video.show{display:block}
-
-/* VOLUME WARNING PANEL */
-#vol-panel{position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.92);transition:opacity .5s}
-#vol-panel.hidden{opacity:0;pointer-events:none}
-.vol-title{font-size:clamp(12px,2vw,16px);color:var(--red);letter-spacing:4px;text-align:center;line-height:1.8}
-.vol-title span{display:block}
-.vol-bar{width:min(70vw,400px);height:6px;background:#111;border:1px solid var(--dim);margin:20px 0 10px;position:relative;overflow:hidden}
-.vol-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--red),var(--cyan));transition:width .8s ease-out}
-.vol-pct{font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:20px}
-.vol-msg{font-size:11px;color:var(--red);letter-spacing:3px;animation:txtFlicker 1.5s infinite;margin-bottom:24px}
-.vol-btn{padding:12px 36px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font);font-size:13px;letter-spacing:4px;cursor:pointer;transition:all .3s;text-transform:uppercase}
-.vol-btn:hover{box-shadow:0 0 20px rgba(0,255,204,.3);text-shadow:0 0 8px var(--cyan)}
-.vol-btn:active{transform:scale(.97)}
-
-/* Bottom bar */
-.bottom-bar{font-size:8px;color:var(--dim);letter-spacing:3px;text-align:center;padding:20px 40px 40px;white-space:nowrap}
-
-/* NOISE GRAIN OVERLAY */
-#grain{position:fixed;inset:0;z-index:9997;pointer-events:none;opacity:.06;animation:grainShift .1s steps(1) infinite}
-@keyframes grainShift{0%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(1px,-2px)}75%{transform:translate(-1px,2px)}100%{transform:translate(2px,-1px)}}
-</style>
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body>
 
-<!-- CRT EFFECTS -->
-<div id="crt-overlay"></div>
-<div id="flicker"></div>
-<canvas id="grain" width="200" height="200"></canvas>
-<canvas id="matrix"></canvas>
-
-<!-- SCREEN 1: LANDING -->
-<div id="screen1">
-  <div class="top-glitch">/// CLASSIFIED LEVEL: ULTRA /// ACCESS RESTRICTED ///</div>
-  <div class="hex-scroll" id="hexScroll"></div>
-
-  <div class="center-block">
-    <div class="title-glitch" data-text="[ ENCRYPTED CHANNEL ]">[ ENCRYPTED CHANNEL ]</div>
-    <div class="sub-text">SECURE CONNECTION ESTABLISHED</div>
-    <div class="terminal-line">root@darknet:~$ <span class="blink-cursor"></span></div>
-    <button class="enter-btn" id="enterBtn">ENTER</button>
-  </div>
-
-  <div class="bottom-warning">WARNING: UNAUTHORIZED ACCESS IS MONITORED</div>
-</div>
-
-<!-- SCREEN 2: BILIBILI-STYLE PLAYER -->
-<div id="screen2">
-  <div class="top-bar">
-    <div class="top-logo">BLACKBILL<span>·</span></div>
-    <div class="top-nav">首页</div>
-    <div class="top-nav">番剧</div>
-    <div class="top-nav">直播</div>
-    <div class="top-nav">专栏</div>
-    <div class="top-nav">影视</div>
-    <div class="top-nav">音乐</div>
-    <div class="top-nav">时政</div>
-    <div class="top-nav">联合创业</div>
-    <div class="top-right">
-      <span>搜索/输入关键词...</span>
-      <div class="top-user">🌀</div>
-    </div>
-  </div>
-
-  <div class="player-main">
-    <!-- LEFT: VIDEO + TITLE + INFO + COMMENTS -->
-    <div class="player-left">
-      <div class="video-wrapper" id="videoWrapper">
-        <div id="loader">
-          <div class="spinner">
-            <div class="spinner-ring"></div>
-            <div class="spinner-ring"></div>
-            <div class="spinner-ring"></div>
-          </div>
-          <div class="spinner-hex" id="spinnerHex">DECRYPTING...</div>
-          <div class="spinner-pct" id="spinnerPct">0%</div>
-        </div>
-        <div id="vol-panel" class="hidden">
-          <div class="vol-title"><span>// AUDIO OUTPUT SCAN //</span><span>检测音频输出...</span></div>
-          <div class="vol-bar"><div class="vol-bar-fill" id="volFill"></div></div>
-          <div class="vol-pct" id="volPct">SCANNING...</div>
-          <div class="vol-msg hidden" id="volMsg">!! AUDIO LEVEL LOW - 请将音量调至最大 !!<br><span style="font-size:9px;color:var(--dim)">LOW VOLUME MAY CAUSE DECODE ERRORS</span></div>
-          <button class="vol-btn hidden" id="volBtn">CONFIRM MAX VOLUME</button>
-        </div>
-        <!-- DANMAKU OVERLAY -->
-        <div id="danmaku-layer"></div>
-        <video id="main-video" preload="none" playsinline>
-          <source src="1.mp4" type="video/mp4">
+    <div id="video-container">
+        <video id="bad-apple-video" autoplay loop>
+            <source src="badapple.mp4" type="video/mp4">
         </video>
-      </div>
-
-      <!-- TITLE -->
-      <div class="video-title">《你支持谁？》——暗网绝密译本 · 全网独家首发 · 4K蓝光重制版</div>
-      <div class="video-stats">
-        <span class="stat"><b>354,890</b> 播放</span>
-        <span class="stat"><b>2,308</b> 弹幕</span>
-        <span class="stat">···</span>
-      </div>
-
-      <!-- UP INFO -->
-      <div class="up-row">
-        <div class="up-avatar"></div>
-        <div class="up-info">
-          <div class="up-name">黑网行动派 <span class="up-verified">✔</span></div>
-          <div class="up-desc">加密频道UP主 · 只传绝密内容</div>
-        </div>
-        <div class="up-action">
-          <button class="ike-btn">投币</button>
-          <button class="ike-btn">收藏</button>
-          <button class="add-btn">+ 关注</button>
-        </div>
-      </div>
-
-      <!-- TABS -->
-      <div class="tabs">
-        <div class="tab active">评论 <span>999+</span></div>
-        <div class="tab">统计</div>
-      </div>
-
-      <!-- COMMENT INPUT -->
-      <div class="comment-input">
-        <div class="ci-av"></div>
-        <input type="text" placeholder="发一条友善的暗网评论" disabled>
-      </div>
-
-      <!-- COMMENTS -->
-      <div class="comment-list" id="commentList"></div>
     </div>
 
-    <!-- RIGHT: SIDEBAR / 推荐 -->
-    <div class="player-right">
-      <div class="right-title">暗网相关推荐</div>
-      <div id="recList"></div>
-    </div>
-  </div>
+    <button id="enter-btn">进入</button>
 
-  <div class="bottom-bar">© BLACKBILL 2009-2026 · 加密频道 本站内容已绝密处理</div>
-</div>
+    <script>
+        const enterBtn = document.getElementById('enter-btn');
+        const videoContainer = document.getElementById('video-container');
+        const video = document.getElementById('bad-apple-video');
 
-<!-- ORIENTATION WARNING -->
-<div id="orient-warning" class="hidden">
-  <div class="rotate-icon"></div>
-  <div class="warn-text">PLEASE ROTATE TO LANDSCAPE</div>
-  <div class="warn-sub">请切换至横屏模式</div>
-</div>
+        enterBtn.addEventListener('click', function() {
+            const btn = this;
 
-<script>
-(function(){
-  // ===== MATRIX RAIN =====
-  var canvas=document.getElementById('matrix'),ctx=canvas.getContext('2d');
-  function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
-  resizeCanvas();window.addEventListener('resize',resizeCanvas);
-  var cols=Math.floor(canvas.width/14),drops=[];
-  for(var i=0;i<cols;i++)drops[i]=Math.random()*-100;
-  var chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF';
-  function drawMatrix(){
-    ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='#00ff41';ctx.font='12px monospace';
-    for(var i=0;i<drops.length;i++){
-      var ch=chars[Math.floor(Math.random()*chars.length)];
-      ctx.fillText(ch,i*14,drops[i]*14);
-      if(drops[i]*14>canvas.height&&Math.random()>.975)drops[i]=0;
-      drops[i]++;
-    }
-  }
-  setInterval(drawMatrix,50);
+            // 显示视频（居中由 CSS 控制）
+            videoContainer.style.display = 'block';
 
-  // ===== NOISE GRAIN =====
-  var grainCanvas=document.getElementById('grain'),gCtx=grainCanvas.getContext('2d');
-  function drawGrain(){
-    var w=grainCanvas.width,h=grainCanvas.height;
-    var img=gCtx.createImageData(w,h);
-    for(var i=0;i<img.data.length;i+=4){
-      var v=Math.random()*255;
-      img.data[i]=v;img.data[i+1]=v;img.data[i+2]=v;img.data[i+3]=255;
-    }
-    gCtx.putImageData(img,0,0);
-  }
-  setInterval(drawGrain,80);
+            // 播放本地视频（带声音）
+            video.muted = false;
+            video.play().catch(e => console.log('Autoplay blocked:', e));
 
-  // ===== HEX SCROLL =====
-  var hexStr='';
-  for(var h=0;h<200;h++)hexStr+=Math.floor(Math.random()*16).toString(16)+' ';
-  document.getElementById('hexScroll').textContent=hexStr;
-
-  // ===== FLOATING HEX =====
-  function spawnHex(){
-    var el=document.createElement('div');el.className='floating-hex';
-    var txt='';for(var j=0;j<8;j++)txt+=Math.floor(Math.random()*16).toString(16);
-    el.textContent=txt;
-    el.style.left=Math.random()*90+'%';el.style.top=Math.random()*90+'%';
-    el.style.fontSize=(7+Math.random()*6)+'px';
-    document.getElementById('screen1').appendChild(el);
-    el.style.transition='opacity 3s';setTimeout(function(){el.style.opacity='0'},4000);
-    setTimeout(function(){el.remove()},7000);
-  }
-  setInterval(spawnHex,800);
-
-  // ===== GENERATE RECOMMENDATIONS =====
-  var recs=[
-    {t:'《你支持谁？》泄露源 1080P先导片',d:'03:02',v:'12.3万'},
-    {t:'暗网入口 全网唯一通道 速存',d:'00:58',v:'8,901'},
-    {t:'不可告人的真相 深入调查',d:'05:40',v:'2.1万'},
-    {t:'神秘组织代号 内部流出音频',d:'04:11',v:'6,540'},
-    {t:'加密文件泄露 全过程记录',d:'07:23',v:'45.2万'},
-    {t:'绝密档案 解密实况',d:'02:36',v:'1,204'},
-    {t:'你支持谁 完整无删减版',d:'10:10',v:'99.9万'},
-    {t:'黑科技逃生通道 亲测可用',d:'03:44',v:'33,000'}
-  ];
-  var emojis=['\u26a1','\ud83d\udd2e','\ud83d\udc7b','\ud83d\udd25','\ud83d\udd12','\ud83d\udc41','\ud83d\udd36','\ud83c\udf10'];
-  var recList=document.getElementById('recList');
-  var recHtml='';
-  for(var r=0;r<recs.length;r++){
-    recHtml+='<div class="rec-item"><div class="rec-thumb">'+emojis[r]+'<span class="rec-dur">'+recs[r].d+'</span></div><div class="rec-body"><div class="rec-title">'+recs[r].t+'</div><div class="rec-meta">'+recs[r].v+'播放 · 加密UP主</div></div></div>';
-  }
-  recList.innerHTML=recHtml;
-
-  // ===== GENERATE COMMENTS =====
-  var comments=[
-    {u:'匿名用户A127',t:'卧槽 这都能通 速度了 兄弟们!!'},
-    {u:'blackhat_xx',t:'密码是啥 有人解码成功了吗 在线等'},
-    {u:'隐形斗篷',t:'绝了 这画质一看就是真通道 不是营销号'},
-    {u:'0xDEADBEEF',t:'已缓存 感谢老哥 别删 我转存了'},
-    {u:'夜行生物',t:'第三次看了 每次进来网速都不一样 神奇'},
-    {u:'加密狗',t:'大家低调 这链接别外传 免得被和谐'},
-    {u:'Meme小王子',t:'\\u9a6c\\u4e0a\\u5b58\\uff0c\\u665a\\u4e0a\\u770b'},
-    {u:'路人甲',t:'我支持！必须的'}
-  ];
-  var commentList=document.getElementById('commentList');
-  var cmHtml='';
-  for(var c=0;c<comments.length;c++){
-    cmHtml+='<div class="comment-item"><div class="comment-av">'+emojis[c%emojis.length]+'</div><div class="comment-body"><div class="comment-user">'+comments[c].u+'</div><div class="comment-text">'+comments[c].t+'</div><div class="comment-time">3天前</div></div></div>';
-  }
-  commentList.innerHTML=cmHtml;
-
-  // ===== DANMAKU =====
-  var danTexts=[
-    '前方高能！！','卧槽','666666','这画质绝了','真有内味','通道已验证',
-    '笑死我了','支持！！！','密码多少啊','已解密','经典老番','这都敢传',
-    '速度太快了吧','收藏了','三连了','膜拜大佬','这就去看','暗网一哥'
-  ];
-  var danLayer=document.getElementById('danmaku-layer');
-  var wrapper=document.getElementById('videoWrapper');
-  function fireDanmaku(){
-    if(!danLayer||!document.getElementById('screen2').classList.contains('active'))return;
-    var idx=Math.floor(Math.random()*danTexts.length);
-    var d=document.createElement('div');
-    d.className='danmaku';
-    d.textContent=danTexts[idx];
-    d.style.color=(Math.random()>0.7)?'var(--cyan)':'#fff';
-    // random height within top 70% of video
-    d.style.top=(Math.random()*65)+'%';
-    d.style.fontSize=(11+Math.random()*6)+'px';
-    // duration based on width
-    var dur=(6+Math.random()*4);
-    d.style.animationDuration=dur+'s';
-    danLayer.appendChild(d);
-    setTimeout(function(){d.remove()},dur*1000);
-  }
-  var danIntv=null;
-  function startDanmaku(){
-    if(danIntv)clearInterval(danIntv);
-    danIntv=setInterval(fireDanmaku,500);
-  }
-
-  // ===== ORIENTATION CHECK =====
-  var isPortrait=function(){return window.innerHeight>window.innerWidth};
-
-  function checkOrientation(){
-    var warn=document.getElementById('orient-warning');
-    if(isPortrait()){
-      warn.classList.remove('hidden');
-      return true;
-    }else{
-      warn.classList.add('hidden');
-      return false;
-    }
-  }
-
-  // ===== ENTER BUTTON =====
-  var entered=false;
-  document.getElementById('enterBtn').addEventListener('click',function(){
-    if(isPortrait()){
-      document.getElementById('orient-warning').classList.remove('hidden');
-      return;
-    }
-    entered=true;
-    document.getElementById('screen1').classList.add('hidden');
-    setTimeout(function(){
-      document.getElementById('screen2').classList.add('active');
-      startLoader();
-    },600);
-  });
-
-  // Orientation listener
-  window.addEventListener('resize',function(){
-    if(entered)checkOrientation();
-  });
-  if(screen.orientation&&screen.orientation.addEventListener){
-    screen.orientation.addEventListener('change',function(){if(entered)checkOrientation()});
-  }
-
-  // ===== LOADING ANIMATION =====
-  function startLoader(){
-    var pct=0;var el=document.getElementById('spinnerPct');
-    var hexEl=document.getElementById('spinnerHex');
-    var hexLines=[];
-    for(var m=0;m<60;m++){var h='';for(var x=0;x<16;x++)h+=Math.floor(Math.random()*16).toString(16);hexLines.push(h);}
-
-    var lineIdx=0;
-    var intv=setInterval(function(){
-      pct+=Math.random()*4+1;
-      if(pct>99)pct=99;
-      el.textContent=Math.floor(pct)+'%';
-      hexEl.textContent=hexLines[lineIdx%hexLines.length];
-      lineIdx++;
-    },120);
-
-    setTimeout(function(){
-      clearInterval(intv);
-      document.getElementById('spinnerPct').textContent='100%';
-      document.getElementById('spinnerHex').textContent='FEED UNLOCKED';
-      setTimeout(function(){
-        document.getElementById('loader').classList.add('done');
-        runVolScan();
-      },600);
-    },3500+Math.random()*1500);
-  }
-
-  // ===== VOLUME SCAN (FAKE) =====
-  function runVolScan(){
-    var panel=document.getElementById('vol-panel');
-    var fill=document.getElementById('volFill');
-    var pctEl=document.getElementById('volPct');
-    var msg=document.getElementById('volMsg');
-    var btn=document.getElementById('volBtn');
-    panel.classList.remove('hidden');
-
-    // Animate scan bar going up then stopping at random low value
-    var scanVal=0;
-    var target=Math.random()*30+15; // stops between 15%-45%
-    var intv=setInterval(function(){
-      scanVal+=Math.random()*3+0.5;
-      if(scanVal>=target){
-        scanVal=target;
-        clearInterval(intv);
-        // Show warning after scan completes
-        setTimeout(function(){
-          msg.classList.remove('hidden');
-          btn.classList.remove('hidden');
-        },400);
-      }
-      fill.style.width=scanVal+'%';
-      pctEl.textContent='AUDIO LEVEL: '+Math.floor(scanVal)+'%';
-    },80);
-
-    // Confirm button handler
-    btn.addEventListener('click',function(){
-      // Animate bar to 100%
-      fill.style.width='100%';
-      pctEl.textContent='AUDIO LEVEL: 100%';
-      msg.textContent='// AUDIO VERIFIED //';
-      msg.style.color='var(--cyan)';
-      msg.style.animation='none';
-      btn.classList.add('hidden');
-      // Then load video
-      setTimeout(function(){
-        panel.classList.add('hidden');
-        loadVideo();
-      },1200);
-    });
-  }
-
-  // ===== VIDEO LOAD + PLAY =====
-  function loadVideo(){
-    // Brief loading state again
-    var loader=document.getElementById('loader');
-    var hexEl=document.getElementById('spinnerHex');
-    var pctEl=document.getElementById('spinnerPct');
-    loader.classList.remove('done');
-    hexEl.textContent='INITIALIZING STREAM...';
-    pctEl.textContent='0%';
-
-    var pct=0;
-    var intv=setInterval(function(){
-      pct+=Math.random()*8+2;
-      if(pct>99)pct=99;
-      pctEl.textContent=Math.floor(pct)+'%';
-      hexEl.textContent='BUFFERING...';
-    },100);
-
-    setTimeout(function(){
-      clearInterval(intv);
-      pctEl.textContent='100%';
-      hexEl.textContent='STREAM READY';
-      setTimeout(function(){
-        loader.classList.add('done');
-        var vid=document.getElementById('main-video');
-        vid.classList.add('show');
-        vid.volume=1.0;
-        vid.muted=false;
-        vid.play().catch(function(){});
-        startDanmaku();
-      },500);
-    },1800+Math.random()*800);
-  }
-})();
-</script>
+            // 按钮缓缓消失（淡出后移除）
+            btn.style.transition = 'opacity 0.8s ease';
+            btn.style.opacity = '0';
+            setTimeout(function() {
+                btn.style.display = 'none';
+            }, 800);
+        });
+    </script>
 </body>
 </html>
