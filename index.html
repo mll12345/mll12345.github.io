@@ -30,6 +30,13 @@
             transition: all 0.3s ease;
             z-index: 100;
             position: absolute;
+            opacity: 1;
+        }
+
+        #enter-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: auto;
         }
 
         #enter-btn:hover {
@@ -58,23 +65,56 @@
 <body>
 
     <div id="video-container">
-        <video id="bad-apple-video" autoplay loop>
+        <video id="bad-apple-video" loop preload="auto">
             <source src="badapple.mp4" type="video/mp4">
         </video>
     </div>
 
-    <button id="enter-btn">进入</button>
+    <button id="enter-btn" disabled>加载中…</button>
 
     <script>
         const enterBtn = document.getElementById('enter-btn');
         const videoContainer = document.getElementById('video-container');
         const video = document.getElementById('bad-apple-video');
 
+        // 预加载整个视频
+        video.preload = 'auto';
+
+        // 视频完整加载(可流畅播放到末尾)后才启用进入按钮
+        video.addEventListener('canplaythrough', function() {
+            enterBtn.disabled = false;
+            enterBtn.textContent = '进入';
+        });
+        video.addEventListener('canplay', function() {
+            // 备用：progress 已足够时也启用
+        });
+        video.addEventListener('error', function() {
+            enterBtn.textContent = '视频加载失败';
+        });
+
+        // 兜底逻辑：progress 显示已缓冲到末尾就启用
+        function checkBuffered() {
+            if (enterBtn.disabled && video.buffered.length > 0) {
+                const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+                if (bufferedEnd >= video.duration) {
+                    enterBtn.disabled = false;
+                    enterBtn.textContent = '进入';
+                }
+            }
+        }
+        video.addEventListener('progress', checkBuffered);
+
         enterBtn.addEventListener('click', function() {
+            if (enterBtn.disabled) return;
             const btn = this;
 
             // 显示视频（居中由 CSS 控制）
             videoContainer.style.display = 'block';
+            videoContainer.style.opacity = '0';
+            requestAnimationFrame(function() {
+                videoContainer.style.transition = 'opacity 0.5s ease';
+                videoContainer.style.opacity = '1';
+            });
 
             // 播放本地视频（带声音）
             video.muted = false;
@@ -87,6 +127,9 @@
                 btn.style.display = 'none';
             }, 800);
         });
+
+        // 页面加载后开始预加载
+        video.load();
     </script>
 </body>
 </html>
