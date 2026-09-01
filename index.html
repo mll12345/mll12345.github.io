@@ -44,6 +44,40 @@
             color: #000;
         }
 
+        #loading-bar-wrap {
+            position: absolute;
+            top: calc(50% + 70px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 240px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+            overflow: hidden;
+            display: none;
+            z-index: 100;
+        }
+
+        #loading-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+            border-radius: 3px;
+            transition: width 0.2s ease;
+        }
+
+        #loading-percent {
+            position: absolute;
+            top: calc(50% - 55px);
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            letter-spacing: 1px;
+            display: none;
+            z-index: 100;
+        }
+
         #video-container {
             position: fixed;
             top: 0;
@@ -71,38 +105,62 @@
     </div>
 
     <button id="enter-btn" disabled>加载中…</button>
+    <div id="loading-percent">0%</div>
+    <div id="loading-bar-wrap">
+        <div id="loading-bar-fill"></div>
+    </div>
 
     <script>
         const enterBtn = document.getElementById('enter-btn');
         const videoContainer = document.getElementById('video-container');
         const video = document.getElementById('bad-apple-video');
+        const loadingBarWrap = document.getElementById('loading-bar-wrap');
+        const loadingBarFill = document.getElementById('loading-bar-fill');
+        const loadingPercent = document.getElementById('loading-percent');
 
         // 预加载整个视频
         video.preload = 'auto';
 
+        // 实时更新加载进度
+        function updateProgress() {
+            let pct = 0;
+            if (video.duration > 0 && video.buffered.length > 0) {
+                const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+                pct = Math.min(100, Math.round((bufferedEnd / video.duration) * 100));
+            }
+            loadingBarFill.style.width = pct + '%';
+            loadingPercent.textContent = pct + '%';
+            return pct;
+        }
+
         // 视频完整加载(可流畅播放到末尾)后才启用进入按钮
-        video.addEventListener('canplaythrough', function() {
+        function enableButton() {
             enterBtn.disabled = false;
             enterBtn.textContent = '进入';
-        });
-        video.addEventListener('canplay', function() {
-            // 备用：progress 已足够时也启用
-        });
+            loadingBarWrap.style.display = 'none';
+            loadingPercent.style.display = 'none';
+        }
+        video.addEventListener('canplaythrough', enableButton);
         video.addEventListener('error', function() {
             enterBtn.textContent = '视频加载失败';
+            loadingBarWrap.style.display = 'none';
+            loadingPercent.textContent = '加载失败';
         });
 
-        // 兜底逻辑：progress 显示已缓冲到末尾就启用
-        function checkBuffered() {
-            if (enterBtn.disabled && video.buffered.length > 0) {
+        // progress 事件：更新进度条 + 检查是否加载完毕
+        function onProgress() {
+            updateProgress();
+            if (enterBtn.disabled && video.buffered.length > 0 && video.duration > 0) {
                 const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-                if (bufferedEnd >= video.duration) {
-                    enterBtn.disabled = false;
-                    enterBtn.textContent = '进入';
+                if (bufferedEnd >= video.duration - 0.1) {
+                    enableButton();
                 }
             }
         }
-        video.addEventListener('progress', checkBuffered);
+        video.addEventListener('progress', onProgress);
+        video.addEventListener('loadedmetadata', function() {
+            updateProgress();
+        });
 
         enterBtn.addEventListener('click', function() {
             if (enterBtn.disabled) return;
@@ -129,6 +187,8 @@
         });
 
         // 页面加载后开始预加载
+        loadingBarWrap.style.display = 'block';
+        loadingPercent.style.display = 'block';
         video.load();
     </script>
 </body>
